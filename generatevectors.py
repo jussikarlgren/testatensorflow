@@ -4,70 +4,74 @@ The vocab file should be build e.g. by using Guillaume's `build_vocab.py`.
 
 """
 
+__author__ = "Jussi Karlgren"
 
 import sparsevectors
 import numpy as np
-from hyperdimensionalsemanticspace import SemanticSpace
-from pathlib import Path
-
 
 dimensionality = 300
-dense = 150
-sparse = 10
+densedensity = 300
+sparsedensity = 10
 
-__author__ = "Jussi Karlgren"
+density = densedensity
+labeldensity = sparsedensity
 
-
+path = "/home/jussi/aktuellt/2018.recfut/tf_ner/data/recfut/"
 # read words file
 if __name__ == '__main__':
     # Load vocab
-    with Path('vocab.words.txt').open() as f:
+    with open(path + "vocab.words.txt","r+") as f:
         word_to_idx = {line.strip(): idx for idx, line in enumerate(f)}
     size_vocab = len(word_to_idx)
+
+    print("antal ord {}".format(size_vocab))
 
     # Array of zeros
     embeddings = np.zeros((size_vocab, dimensionality))
 
- # Get relevant glove vectors
-    found = 0
-    print('Reading GloVe file (may take a while)')
-    with Path('glove.840B.300d.txt').open() as f:
-        for line_idx, line in enumerate(f):
-            if line_idx % 100000 == 0:
-                print('- At line {}'.format(line_idx))
-            line = line.strip().split()
-            if len(line) != 300 + 1:
-                continue
-            word = line[0]
-            embedding = line[1:]
-            if word in word_to_idx:
-                found += 1
-                word_idx = word_to_idx[word]
-                embeddings[word_idx] = embedding
-    print('- done. Found {} vectors for {} words'.format(found, size_vocab))
+    for word in word_to_idx:
+        vector = sparsevectors.newrandomvector(dimensionality, density)
+        word_idx = word_to_idx[word]
+        embeddings[word_idx] = sparsevectors.listify(vector, dimensionality)
 
-# read pos file
-# read ner file
+    np.savez_compressed(path + 'randomindex.npz', embeddings=embeddings)
 
+    with open(path + "vocab.words.txt","r+") as f:
+        word_to_idx = {line.strip(): idx for idx, line in enumerate(f)}
+    size_vocab = len(word_to_idx)
 
-# generate index vector for each token
-dense = False
+    print("antal ord {}".format(size_vocab))
 
-if dense:
-    semanticspace = SemanticSpace(300, 150)
-    # 1 output in npz form
-    # Save np.array to file
-    #    np.savez_compressed('glove.npz', embeddings=embeddings)
-else:
-    semanticspace = SemanticSpace(300, 10)
-    # sparse index vectors
-    # 2 output in npz form
-    # Save np.array to file
-#    np.savez_compressed('glove.npz', embeddings=embeddings)
+    # Array of zeros
+    embeddings = np.zeros((size_vocab, dimensionality))
 
+    for word in word_to_idx:
+        vector = sparsevectors.newrandomvector(dimensionality, density)
+        word_idx = word_to_idx[word]
+        embeddings[word_idx] = sparsevectors.listify(vector, dimensionality)
 
-# generate permutations for each pos
-# permute each index vector (try both dense and sparse cases)
+    np.savez_compressed(path + 'randomindex.npz', embeddings=embeddings)
+
+    labels = {}
+    for labelset in ["dependencies", "ner", "postags"]:
+        with open(path + labelset + ".list","r+") as f:
+            for line in f:
+                labels[line.strip()] = sparsevectors.newrandomvector(dimensionality, labeldensity)
+
+    print("antal etiketter {}".format(len(labels)))
+
+    # Array of zeros
+    embeddings = np.zeros((size_vocab, dimensionality))
+
+    for word in word_to_idx:
+        vector = sparsevectors.newrandomvector(dimensionality, density)
+        word_idx = word_to_idx[word]
+        embeddings[word_idx] = sparsevectors.listify(vector, dimensionality)
+
+    np.savez_compressed(path + 'randomindexlabels.npz', embeddings=embeddings)
+
+    
+
 # 3.1 output
     # Save np.array to file
 #    np.savez_compressed('glove.npz', embeddings=embeddings)
@@ -97,9 +101,4 @@ else:
 # generate some operation to encode each triple from a similar palette
 
 # generate index vector for each construction of interest
-
-
-
-
-
 
